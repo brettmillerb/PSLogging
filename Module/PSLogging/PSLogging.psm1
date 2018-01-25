@@ -5,426 +5,210 @@
 
 Set-StrictMode -Version Latest
 
+function Get-LogDate {
+    <#
+    .SYNOPSIS
+     Creates a Date and Timestamp to be used in log file creation
+
+    .DESCRIPTION
+     Creates a nicely formatted timestamp for use in log creation
+
+    .PARAMETER Format
+     Displays the date and time in the Microsoft .NET Framework format indicated by the format specifier.
+     Enter a format specifier. For a list of available format specifiers, see DateTimeFormatInfo Class http://msdn.microsoft.com/library/system.globalization.datetimeformatinfo.aspx (http://msdn.microsoft.com/library/system.globalization.datetimeformatinfo.aspx) in MSDN.
+
+    .EXAMPLE
+     Get-LogDate
+
+    .EXAMPLE
+     Get-LogDate -Format 'yyyy-MM-dd HH:mm:ss'
+
+    .EXAMPLE
+     Get-LogDate
+
+    .NOTES
+     Default formatting if no formatting provided: 'yyyy-MM-dd HH:mm:ss'
+    #>
+    Param(
+        [Parameter(Position=0)]
+        [String]$Format = 'yyyy-MM-dd HH:mm:ss'
+    )
+
+    Get-Date -Format ("[{0}]" -f $Format)
+}
 
 Function Start-Log {
-  <#
-  .SYNOPSIS
-    Creates a new log file
+    <#
+    .SYNOPSIS
+     Creates a new log file
 
-  .DESCRIPTION
-    Creates a log file with the path and name specified in the parameters. Checks if log file exists, and if it does deletes it and creates a new one.
-    Once created, writes initial logging data
+    .DESCRIPTION
+     Creates a log file with the path and name specified in the parameters. Checks if log file exists, and if it does deletes it and creates a new one.
+     Once created, writes initial logging data
 
-  .PARAMETER LogPath
-    Mandatory. Path of where log is to be created. Example: C:\Windows\Temp
+    .PARAMETER LogPath
+     Mandatory. Path of where log is to be created. Example: C:\Windows\Temp
 
-  .PARAMETER LogName
-    Mandatory. Name of log file to be created. Example: Test_Script.log
+    .PARAMETER LogName
+     Mandatory. Name of log file to be created. Example: Test_Script.log
 
-  .PARAMETER ScriptVersion
-    Mandatory. Version of the running script which will be written in the log. Example: 1.5
+    .PARAMETER ToScreen
+     Optional. When parameter specified will display the content to screen as well as write to log file. This provides an additional
+     another option to write content to screen as opposed to using debug mode.
 
-  .PARAMETER ToScreen
-    Optional. When parameter specified will display the content to screen as well as write to log file. This provides an additional
-    another option to write content to screen as opposed to using debug mode.
+    .INPUTS
+     Parameters above
 
-  .INPUTS
-    Parameters above
-
-  .OUTPUTS
+    .OUTPUTS
     Log file created
 
-  .NOTES
-    Version:        1.0
-    Author:         Luca Sturlese
-    Creation Date:  10/05/12
-    Purpose/Change: Initial function development.
+    .NOTES
+     Version:        1.0
+     Author:         Luca Sturlese
+     Creation Date:  10/05/12
+     Purpose/Change: Initial function development.
 
-    Version:        1.1
-    Author:         Luca Sturlese
-    Creation Date:  19/05/12
-    Purpose/Change: Added debug mode support.
+     Version:        1.1
+     Author:         Luca Sturlese
+     Creation Date:  19/05/12
+     Purpose/Change: Added debug mode support.
 
-    Version:        1.2
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Changed function name to use approved PowerShell Verbs. Improved help documentation.
+     Version:        1.2
+     Author:         Luca Sturlese
+     Creation Date:  02/09/15
+     Purpose/Change: Changed function name to use approved PowerShell Verbs. Improved help documentation.
 
-    Version:        1.3
-    Author:         Luca Sturlese
-    Creation Date:  07/09/15
-    Purpose/Change: Resolved issue with New-Item cmdlet. No longer creates error. Tested - all ok.
+     Version:        1.3
+     Author:         Luca Sturlese
+     Creation Date:  07/09/15
+     Purpose/Change: Resolved issue with New-Item cmdlet. No longer creates error. Tested - all ok.
 
-    Version:        1.4
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
+     Version:        1.4
+     Author:         Luca Sturlese
+     Creation Date:  12/09/15
+     Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
 
-  .LINK
-    http://9to5IT.com/powershell-logging-v2-easily-create-log-files
+    .LINK
+     http://9to5IT.com/powershell-logging-v2-easily-create-log-files
 
-  .EXAMPLE
-    Start-Log -LogPath "C:\Windows\Temp" -LogName "Test_Script.log" -ScriptVersion "1.5"
+    .EXAMPLE
+     Start-Log -LogPath "C:\Windows\Temp" -LogName "Test_Script.log"
 
-    Creates a new log file with the file path of C:\Windows\Temp\Test_Script.log. Initialises the log file with
-    the date and time the log was created (or the calling script started executing) and the calling script's version.
-  #>
+     Creates a new log file with the file path of C:\Windows\Temp\Test_Script.log. Initialises the log file with
+     the date and time the log was created (or the calling script started executing) and the calling script's version.
+    #>
 
-  [CmdletBinding()]
+    [CmdletBinding()]
 
-  Param (
-    [Parameter(Mandatory=$true,Position=0)][string]$LogPath,
-    [Parameter(Mandatory=$true,Position=1)][string]$LogName,
-    [Parameter(Mandatory=$true,Position=2)][string]$ScriptVersion,
-    [Parameter(Mandatory=$false,Position=3)][switch]$ToScreen
-  )
+    Param (
+        [Parameter(Mandatory = $true,
+            Position = 0)]
+            [ValidateNotNullOrEmpty()]
+            [string]$LogPath,
 
-  Process {
-    $sFullPath = Join-Path -Path $LogPath -ChildPath $LogName
+        [Parameter(Mandatory = $true,
+            Position = 1)]
+            [ValidateNotNullOrEmpty()]
+            [string]$LogName
+            )
 
-    #Check if file exists and delete if it does
-    If ( (Test-Path -Path $sFullPath) ) {
-      Remove-Item -Path $sFullPath -Force
-    }
-
-    #Create file and start logging
-    New-Item -Path $sFullPath –ItemType File
-
-    Add-Content -Path $sFullPath -Value "***************************************************************************************************"
-    Add-Content -Path $sFullPath -Value "Started processing at [$([DateTime]::Now)]."
-    Add-Content -Path $sFullPath -Value "***************************************************************************************************"
-    Add-Content -Path $sFullPath -Value ""
-    Add-Content -Path $sFullPath -Value "Running script version [$ScriptVersion]."
-    Add-Content -Path $sFullPath -Value ""
-    Add-Content -Path $sFullPath -Value "***************************************************************************************************"
-    Add-Content -Path $sFullPath -Value ""
-
-    #Write to screen for debug mode
-    Write-Debug "***************************************************************************************************"
-    Write-Debug "Started processing at [$([DateTime]::Now)]."
-    Write-Debug "***************************************************************************************************"
-    Write-Debug ""
-    Write-Debug "Running script version [$ScriptVersion]."
-    Write-Debug ""
-    Write-Debug "***************************************************************************************************"
-    Write-Debug ""
-
-    #Write to scren for ToScreen mode
-    If ( $ToScreen -eq $True ) {
-      Write-Output "***************************************************************************************************"
-      Write-Output "Started processing at [$([DateTime]::Now)]."
-      Write-Output "***************************************************************************************************"
-      Write-Output ""
-      Write-Output "Running script version [$ScriptVersion]."
-      Write-Output ""
-      Write-Output "***************************************************************************************************"
-      Write-Output ""
-    }
-  }
-}
+            Process {
+                $sFullPath = Join-Path -Path $LogPath -ChildPath $LogName
+        
+                #Check if file exists and delete if it does
+                If ( (Test-Path -Path $sFullPath) ) {
+                    "Removing existing logfile" | Write-Verbose
+                    Remove-Item -Path $sFullPath -Force
+                }
+        
+                #Create file and start logging
+                "Creating new log file in {0}" -f $sFullPath | Write-Verbose
+                New-Item -Path $sFullPath -ItemType File | Out-Null
+        
+                "{0} Log Started processing." -f (Get-LogDate) | Add-Content -Path $sFullPath
+            }
+        }
 
 Function Write-LogInfo {
-  <#
-  .SYNOPSIS
-    Writes informational message to specified log file
+    <#
+    .SYNOPSIS
+     Writes informational message to specified log file
 
-  .DESCRIPTION
-    Appends a new informational message to the specified log file
+    .DESCRIPTION
+     Appends a new informational message to the specified log file
 
-  .PARAMETER LogPath
-    Mandatory. Full path of the log file you want to write to. Example: C:\Windows\Temp\Test_Script.log
+    .PARAMETER LogPath
+     Mandatory. Full path of the log file you want to write to. Example: C:\Windows\Temp\Test_Script.log
 
-  .PARAMETER Message
-    Mandatory. The string that you want to write to the log
+    .PARAMETER Message
+     Mandatory. The string that you want to write to the log
 
-  .PARAMETER TimeStamp
-    Optional. When parameter specified will append the current date and time to the end of the line. Useful for knowing
-    when a task started and stopped.
+    .PARAMETER TimeStamp
+     Optional. When parameter specified will append the current date and time to the end of the line. Useful for knowing
+     when a task started and stopped.
 
-  .PARAMETER ToScreen
-    Optional. When parameter specified will display the content to screen as well as write to log file. This provides an additional
-    another option to write content to screen as opposed to using debug mode.
+    .INPUTS
+     Parameters above
 
-  .INPUTS
-    Parameters above
+    .OUTPUTS
+     None
 
-  .OUTPUTS
-    None
+    .NOTES
+     Version:        1.0
+     Author:         Luca Sturlese
+     Creation Date:  10/05/12
+     Purpose/Change: Initial function development.
 
-  .NOTES
-    Version:        1.0
-    Author:         Luca Sturlese
-    Creation Date:  10/05/12
-    Purpose/Change: Initial function development.
+     Version:        1.1
+     Author:         Luca Sturlese
+     Creation Date:  19/05/12
+     Purpose/Change: Added debug mode support.
 
-    Version:        1.1
-    Author:         Luca Sturlese
-    Creation Date:  19/05/12
-    Purpose/Change: Added debug mode support.
+     Version:        1.2
+     Author:         Luca Sturlese
+     Creation Date:  02/09/15
+     Purpose/Change: Changed function name to use approved PowerShell Verbs. Improved help documentation.
 
-    Version:        1.2
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Changed function name to use approved PowerShell Verbs. Improved help documentation.
+     Version:        1.3
+     Author:         Luca Sturlese
+     Creation Date:  02/09/15
+     Purpose/Change: Changed parameter name from LineValue to Message to improve consistency across functions.
 
-    Version:        1.3
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Changed parameter name from LineValue to Message to improve consistency across functions.
+     Version:        1.4
+     Author:         Luca Sturlese
+     Creation Date:  12/09/15
+     Purpose/Change: Added -TimeStamp parameter which append a timestamp to the end of the line. Useful for knowing when a task started and stopped.
 
-    Version:        1.4
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -TimeStamp parameter which append a timestamp to the end of the line. Useful for knowing when a task started and stopped.
+     Version:        1.5
+     Author:         Luca Sturlese
+     Creation Date:  12/09/15
+     Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
 
-    Version:        1.5
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
+    .LINK
+     http://9to5IT.com/powershell-logging-v2-easily-create-log-files
 
-  .LINK
-    http://9to5IT.com/powershell-logging-v2-easily-create-log-files
+    .EXAMPLE
+     Write-LogInfo -LogPath "C:\Windows\Temp\Test_Script.log" -Message "This is a new line which I am appending to the end of the log file."
 
-  .EXAMPLE
-    Write-LogInfo -LogPath "C:\Windows\Temp\Test_Script.log" -Message "This is a new line which I am appending to the end of the log file."
+     Writes a new informational log message to a new line in the specified log file.
+    #>
 
-    Writes a new informational log message to a new line in the specified log file.
-  #>
+    [CmdletBinding()]
 
-  [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory = $true, 
+            Position = 0)]
+            [string]$LogPath,
 
-  Param (
-    [Parameter(Mandatory=$true,Position=0)][string]$LogPath,
-    [Parameter(Mandatory=$true,Position=1,ValueFromPipeline=$true)][string]$Message,
-    [Parameter(Mandatory=$false,Position=2)][switch]$TimeStamp,
-    [Parameter(Mandatory=$false,Position=3)][switch]$ToScreen
-  )
+        [Parameter(Mandatory = $true,
+            Position = 1,
+            ValueFromPipeline = $true)]
+            [string]$Message
+    )
 
-  Process {
-    #Add TimeStamp to message if specified
-    If ( $TimeStamp -eq $True ) {
-      $Message = "$Message  [$([DateTime]::Now)]"
+    Process {
+        "{0} {1}" -f (Get-LogDate), $Message | Add-Content -Path $LogPath
     }
-
-    #Write Content to Log
-    Add-Content -Path $LogPath -Value $Message
-
-    #Write to screen for debug mode
-    Write-Debug $Message
-
-    #Write to scren for ToScreen mode
-    If ( $ToScreen -eq $True ) {
-      Write-Output $Message
-    }
-  }
-}
-
-Function Write-LogWarning {
-  <#
-  .SYNOPSIS
-    Writes warning message to specified log file
-
-  .DESCRIPTION
-    Appends a new warning message to the specified log file. Automatically prefixes line with WARNING:
-
-  .PARAMETER LogPath
-    Mandatory. Full path of the log file you want to write to. Example: C:\Windows\Temp\Test_Script.log
-
-  .PARAMETER Message
-    Mandatory. The string that you want to write to the log
-
-  .PARAMETER TimeStamp
-    Optional. When parameter specified will append the current date and time to the end of the line. Useful for knowing
-    when a task started and stopped.
-
-  .PARAMETER ToScreen
-    Optional. When parameter specified will display the content to screen as well as write to log file. This provides an additional
-    another option to write content to screen as opposed to using debug mode.
-
-  .INPUTS
-    Parameters above
-
-  .OUTPUTS
-    None
-
-  .NOTES
-    Version:        1.0
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Initial function development.
-
-    Version:        1.1
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -TimeStamp parameter which append a timestamp to the end of the line. Useful for knowing when a task started and stopped.
-
-    Version:        1.2
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
-
-  .LINK
-    http://9to5IT.com/powershell-logging-v2-easily-create-log-files
-
-  .EXAMPLE
-    Write-LogWarning -LogPath "C:\Windows\Temp\Test_Script.log" -Message "This is a warning message."
-
-    Writes a new warning log message to a new line in the specified log file.
-  #>
-
-  [CmdletBinding()]
-
-  Param (
-    [Parameter(Mandatory=$true,Position=0)][string]$LogPath,
-    [Parameter(Mandatory=$true,Position=1,ValueFromPipeline=$true)][string]$Message,
-    [Parameter(Mandatory=$false,Position=2)][switch]$TimeStamp,
-    [Parameter(Mandatory=$false,Position=3)][switch]$ToScreen
-  )
-
-  Process {
-    #Add TimeStamp to message if specified
-    If ( $TimeStamp -eq $True ) {
-      $Message = "$Message  [$([DateTime]::Now)]"
-    }
-
-    #Write Content to Log
-    Add-Content -Path $LogPath -Value "WARNING: $Message"
-
-    #Write to screen for debug mode
-    Write-Debug "WARNING: $Message"
-
-    #Write to scren for ToScreen mode
-    If ( $ToScreen -eq $True ) {
-      Write-Output "WARNING: $Message"
-    }
-  }
-}
-
-Function Write-LogError {
-  <#
-  .SYNOPSIS
-    Writes error message to specified log file
-
-  .DESCRIPTION
-    Appends a new error message to the specified log file. Automatically prefixes line with ERROR:
-
-  .PARAMETER LogPath
-    Mandatory. Full path of the log file you want to write to. Example: C:\Windows\Temp\Test_Script.log
-
-  .PARAMETER Message
-    Mandatory. The description of the error you want to pass (pass your own or use $_.Exception)
-
-  .PARAMETER TimeStamp
-    Optional. When parameter specified will append the current date and time to the end of the line. Useful for knowing
-    when a task started and stopped.
-
-  .PARAMETER ExitGracefully
-    Optional. If parameter specified, then runs Stop-Log and then exits script
-
-  .PARAMETER ToScreen
-    Optional. When parameter specified will display the content to screen as well as write to log file. This provides an additional
-    another option to write content to screen as opposed to using debug mode.
-
-  .INPUTS
-    Parameters above
-
-  .OUTPUTS
-    None
-
-  .NOTES
-    Version:        1.0
-    Author:         Luca Sturlese
-    Creation Date:  10/05/12
-    Purpose/Change: Initial function development.
-
-    Version:        1.1
-    Author:         Luca Sturlese
-    Creation Date:  19/05/12
-    Purpose/Change: Added debug mode support. Added -ExitGracefully parameter functionality.
-
-    Version:        1.2
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Changed function name to use approved PowerShell Verbs. Improved help documentation.
-
-    Version:        1.3
-    Author:         Luca Sturlese
-    Creation Date:  02/09/15
-    Purpose/Change: Changed parameter name from ErrorDesc to Message to improve consistency across functions.
-
-    Version:        1.4
-    Author:         Luca Sturlese
-    Creation Date:  03/09/15
-    Purpose/Change: Improved readability and cleaniness of error writing.
-
-    Version:        1.5
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Changed -ExitGracefully parameter to switch type so no longer need to specify $True or $False (see example for info).
-
-    Version:        1.6
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -TimeStamp parameter which append a timestamp to the end of the line. Useful for knowing when a task started and stopped.
-
-    Version:        1.7
-    Author:         Luca Sturlese
-    Creation Date:  12/09/15
-    Purpose/Change: Added -ToScreen parameter which will display content to screen as well as write to the log file.
-
-  .LINK
-    http://9to5IT.com/powershell-logging-v2-easily-create-log-files
-
-  .EXAMPLE
-    Write-LogError -LogPath "C:\Windows\Temp\Test_Script.log" -Message $_.Exception -ExitGracefully
-
-    Writes a new error log message to a new line in the specified log file. Once the error has been written,
-    the Stop-Log function is excuted and the calling script is exited.
-
-  .EXAMPLE
-    Write-LogError -LogPath "C:\Windows\Temp\Test_Script.log" -Message $_.Exception
-
-    Writes a new error log message to a new line in the specified log file, but does not execute the Stop-Log
-    function, nor does it exit the calling script. In other words, the only thing that occurs is an error message
-    is written to the log file and that is it.
-
-    Note: If you don't specify the -ExitGracefully parameter, then the script will not exit on error.
-  #>
-
-  [CmdletBinding()]
-
-  Param (
-    [Parameter(Mandatory=$true,Position=0)][string]$LogPath,
-    [Parameter(Mandatory=$true,Position=1,ValueFromPipeline=$true)][string]$Message,
-    [Parameter(Mandatory=$false,Position=3)][switch]$TimeStamp,
-    [Parameter(Mandatory=$false,Position=4)][switch]$ExitGracefully,
-    [Parameter(Mandatory=$false,Position=5)][switch]$ToScreen
-  )
-
-  Process {
-    #Add TimeStamp to message if specified
-    If ( $TimeStamp -eq $True ) {
-      $Message = "$Message  [$([DateTime]::Now)]"
-    }
-
-    #Write Content to Log
-    Add-Content -Path $LogPath -Value "ERROR: $Message"
-
-    #Write to screen for debug mode
-    Write-Debug "ERROR: $Message"
-
-    #Write to scren for ToScreen mode
-    If ( $ToScreen -eq $True ) {
-      Write-Output "ERROR: $Message"
-    }
-
-    #If $ExitGracefully = True then run Log-Finish and exit script
-    If ( $ExitGracefully -eq $True ){
-      Add-Content -Path $LogPath -Value " "
-      Stop-Log -LogPath $LogPath
-      Break
-    }
-  }
 }
 
 Function Stop-Log {
@@ -503,30 +287,18 @@ Function Stop-Log {
   [CmdletBinding()]
 
   Param (
-    [Parameter(Mandatory=$true,Position=0)][string]$LogPath,
-    [Parameter(Mandatory=$false,Position=1)][switch]$NoExit,
-    [Parameter(Mandatory=$false,Position=2)][switch]$ToScreen
+    [Parameter(Mandatory=$true,
+        Position=0)]
+        [string]$LogPath,
+
+    [Parameter(Mandatory=$false,
+        Position=1)]
+        [switch]$NoExit
   )
 
   Process {
-    Add-Content -Path $LogPath -Value ""
-    Add-Content -Path $LogPath -Value "***************************************************************************************************"
-    Add-Content -Path $LogPath -Value "Finished processing at [$([DateTime]::Now)]."
-    Add-Content -Path $LogPath -Value "***************************************************************************************************"
-
-    #Write to screen for debug mode
-    Write-Debug ""
-    Write-Debug "***************************************************************************************************"
-    Write-Debug "Finished processing at [$([DateTime]::Now)]."
-    Write-Debug "***************************************************************************************************"
-
-    #Write to scren for ToScreen mode
-    If ( $ToScreen -eq $True ) {
-      Write-Output ""
-      Write-Output "***************************************************************************************************"
-      Write-Output "Finished processing at [$([DateTime]::Now)]."
-      Write-Output "***************************************************************************************************"
-    }
+    "{0} Log Finished" -f (Get-LogDate) | Write-Verbose
+    "{0} Log Finished" -f (Get-LogDate) | Add-Content -Path $LogPath
 
     #Exit calling script if NoExit has not been specified or is set to False
     If( !($NoExit) -or ($NoExit -eq $False) ){
