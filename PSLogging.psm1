@@ -67,7 +67,7 @@ Function Start-Log {
     )
 
     Process {
-        $PSBoundParameters.GetEnumerator() | Write-Verbose
+        $PSBoundParameters['LogPath','LogName'] | Write-Verbose
 
         $logFile = Join-Path -Path $LogPath -ChildPath $LogName
 
@@ -126,7 +126,8 @@ Function Write-Log {
     )
 
     Process {
-        $PSBoundParameters.GetEnumerator() | Write-Verbose
+        $PSBoundParameters['LogPath','Message'] | Write-Verbose
+        
         "{0} {1}" -f (Get-LogDate), $Message | Add-Content -Path $LogPath
     }
 }
