@@ -85,7 +85,7 @@ Function Start-Log {
     }
 }
 
-Function Write-LogInfo {
+Function Write-Log {
     <#
     .SYNOPSIS
     Writes string messages to a specified log file
